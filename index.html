@@ -477,8 +477,10 @@ function build() {
     if (!key) return;
     const f = airport(r["From"]), t = airport(r["To"]);
     const title = `${f.city || f.code} → ${t.city || t.code}`;
-    const sub = [clean(r["Arrive"]) ? `${T[lang].arrives} ${fmtTime(r["Arrive"])}` : "", esc(clean(r["Airline"])), clean(r["Flight number"]) ? `${T[lang].flightNo} ${esc(clean(r["Flight number"]))}` : ""].filter(Boolean).join(" · ");
-    add(key, { sort: minutes(r["Depart"]) ?? 8999, html: eventHtml(fmtTime(r["Depart"]), `✈️ ${title}`, sub, [whoBadge(r["Who"])], "", "", T[lang].flight) });
+    const sub = [esc(clean(r["Airline"])), clean(r["Flight number"]) ? `${T[lang].flightNo} ${esc(clean(r["Flight number"]))}` : ""].filter(Boolean).join(" · ");
+    // Show departure and arrival together, like "1:25 PM – 4:41 PM"
+    const when = clean(r["Arrive"]) ? `${fmtTime(r["Depart"])} – ${fmtTime(r["Arrive"])}` : fmtTime(r["Depart"]);
+    add(key, { sort: minutes(r["Depart"]) ?? 8999, html: eventHtml(when, `✈️ ${title}`, sub, [whoBadge(r["Who"])], "", "", T[lang].flight) });
   });
   stays.forEach(r => {
     const name = esc(clean(r["Name"]));
