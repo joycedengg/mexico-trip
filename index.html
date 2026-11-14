@@ -81,9 +81,13 @@
 
   /* Day picker strip */
   .strip {
-    display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 14px; margin: 0 -16px 6px; padding-left: 16px; padding-right: 16px;
+    display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px 10px;
+    padding: calc(env(safe-area-inset-top) + 10px) 16px 12px;
     scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    position: sticky; top: 0; z-index: 5; background: var(--bg);
+    border-bottom: 1px solid transparent; transition: border-color .2s, box-shadow .2s;
   }
+  .strip.stuck { border-bottom-color: var(--line); box-shadow: 0 6px 14px rgba(60,40,20,.06); }
   .strip::-webkit-scrollbar { display: none; }
   .chip {
     flex: 0 0 auto; border: 1px solid var(--line); background: var(--card); border-radius: 14px;
@@ -92,6 +96,10 @@
   .chip .dow { display: block; font-size: 13px; color: var(--muted); }
   .chip .num { display: block; font-size: 20px; font-weight: 700; }
   .chip.today { border-color: var(--terracotta); }
+  .chip.on { background: var(--terracotta); border-color: var(--terracotta); color: #fff; }
+  .chip.on .dow { color: #FCE3DB; }
+  .chip.on.has::after { background: #fff; }
+  .earlier { display: block; width: 100%; border: 1px dashed var(--line); background: transparent; color: var(--teal); font-weight: 600; font-size: 15px; border-radius: 14px; padding: 12px; margin-bottom: 14px; }
   .chip.has { position: relative; }
   .chip.has::after { content: ""; position: absolute; left: 50%; bottom: 5px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--terracotta); }
 
@@ -99,7 +107,7 @@
   .card {
     background: var(--card); border-radius: var(--radius); padding: 18px; margin-bottom: 14px;
     box-shadow: 0 1px 2px rgba(60,40,20,.06), 0 4px 14px rgba(60,40,20,.05);
-    scroll-margin-top: 16px;
+    scroll-margin-top: calc(env(safe-area-inset-top) + 104px);
   }
   .day-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
   .day-head h2 { margin: 0; font-size: 21px; }
@@ -257,7 +265,8 @@ const T = {
     noFlights: "No flights added yet.", noStays: "No places to stay added yet.",
     offline: "Couldn't reach the sheet. Showing the last saved copy.",
     updated: t => `Updated ${t}`, refresh: "Refresh", edit: "Edit plans",
-    loading: "Loading…"
+    loading: "Loading…",
+    earlier: (n, range) => `Show ${n} earlier day${n > 1 ? "s" : ""} (${range})`
   },
   zh: {
     navDays: "每日行程", navFlights: "航班", navStays: "住宿",
@@ -268,7 +277,8 @@ const T = {
     noFlights: "还没有添加航班。", noStays: "还没有添加住宿。",
     offline: "暂时无法连接表格，正在显示上次保存的内容。",
     updated: t => `更新于 ${t}`, refresh: "刷新", edit: "编辑行程",
-    loading: "加载中…"
+    loading: "加载中…",
+    earlier: (n, range) => `显示之前的 ${n} 天（${range}）`
   }
 };
 const DOW_EN = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -284,7 +294,9 @@ const params = new URLSearchParams(location.search);
 let lang = params.get("lang") || store.get("trip-lang") || ((navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en");
 if (!T[lang]) lang = "en";
 let view = store.get("trip-view") || "days";
-let data = null, offline = false, updatedAt = null, scrolledToToday = false;
+let data = null, offline = false, updatedAt = null, showPast = false, activeDay = null, spyPausedUntil = 0;
+// "?today=2026-12-15" previews how the page looks on a given trip day.
+const todayKey = () => parseDate(params.get("today") || "") || dateKey(new Date());
 
 /* ===== Helpers ===== */
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -496,8 +508,10 @@ function dayItemHtml(r) {
 
 /* ===== Views ===== */
 function renderDays(trip) {
-  const todayK = dateKey(new Date());
+  const todayK = todayKey();
   const L = T[lang];
+  const past = trip.days.includes(todayK) ? trip.days.filter(k => k < todayK) : [];
+  const hidden = showPast ? [] : past;
   let html = `<div class="strip" id="strip">` + trip.days.map((k, i) => {
     const dt = keyToDate(k);
     return `<button type="button" class="chip ${k === todayK ? "today" : ""} ${trip.byDay[k] ? "has" : ""}" data-jump="${k}">
@@ -505,7 +519,12 @@ function renderDays(trip) {
       <span class="num">${dt.getDate()}</span></button>`;
   }).join("") + `</div>`;
 
+  if (hidden.length) {
+    const range = hidden.length > 1 ? `${fmtDay(hidden[0])} – ${fmtDay(hidden[hidden.length - 1])}` : fmtDay(hidden[0]);
+    html += `<button type="button" class="earlier" data-earlier>${esc(L.earlier(hidden.length, range))}</button>`;
+  }
   html += trip.days.map((k, i) => {
+    if (hidden.includes(k)) return "";
     const evs = (trip.byDay[k] || []).sort((a, b) => a.sort - b.sort);
     return `<section class="card" id="d-${k}">
       <div class="day-head"><h2>${fmtDay(k)}${k === todayK ? `<span class="today-tag">${L.today}</span>` : ""}</h2>
@@ -586,12 +605,44 @@ function render() {
   html += `<footer>${time ? L.updated(time) + " · " : ""}<button type="button" id="refresh">${L.refresh}</button> · <a href="https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/edit" target="_blank" rel="noopener">${L.edit}</a></footer>`;
   document.getElementById("main").innerHTML = html;
 
-  if (view === "days" && !scrolledToToday) {
-    scrolledToToday = true;
-    const el = document.getElementById("d-" + dateKey(new Date()));
-    if (el) el.scrollIntoView();
-  }
+  updateActiveDay(true);
 }
+
+/* ===== Sticky date strip: highlight the day on screen ===== */
+function setActiveChip(k, instant) {
+  const strip = document.getElementById("strip"); if (!strip) return;
+  strip.querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c.dataset.jump === k));
+  if (k === activeDay && !instant) return;
+  activeDay = k;
+  const chip = strip.querySelector(`[data-jump="${k}"]`);
+  if (chip) strip.scrollTo({ left: chip.offsetLeft - strip.clientWidth / 2 + chip.offsetWidth / 2, behavior: instant ? "auto" : "smooth" });
+}
+function updateActiveDay(instant) {
+  const strip = document.getElementById("strip"); if (!strip) return;
+  strip.classList.toggle("stuck", strip.getBoundingClientRect().top <= 0.5 && window.scrollY > 0);
+  if (Date.now() < spyPausedUntil) return;
+  const cards = [...document.querySelectorAll('section.card[id^="d-"]')]; if (!cards.length) return;
+  const line = strip.getBoundingClientRect().bottom + 24;
+  let cur = cards[0];
+  for (const c of cards) if (c.getBoundingClientRect().top <= line) cur = c;
+  // At the very bottom the last days can't reach the top, so keep whichever day was tapped
+  if (window.scrollY > 0 && window.innerHeight + window.scrollY >= document.body.scrollHeight - 4 && activeDay && document.getElementById("d-" + activeDay)) return setActiveChip(activeDay, instant);
+  setActiveChip(cur.id.slice(2), instant);
+}
+function jumpToDay(k) {
+  let el = document.getElementById("d-" + k);
+  if (!el) { showPast = true; render(); el = document.getElementById("d-" + k); }
+  if (!el) return;
+  spyPausedUntil = Date.now() + 900;
+  setActiveChip(k);
+  el.scrollIntoView({ behavior: "smooth" });
+}
+let spyQueued = false;
+window.addEventListener("scroll", () => {
+  if (spyQueued || view !== "days") return;
+  spyQueued = true;
+  requestAnimationFrame(() => { spyQueued = false; updateActiveDay(); });
+}, { passive: true });
 
 /* ===== Events ===== */
 document.querySelector(".lang").addEventListener("click", e => {
@@ -604,7 +655,8 @@ document.querySelector("nav").addEventListener("click", e => {
 });
 document.getElementById("main").addEventListener("click", e => {
   const jump = e.target.closest("[data-jump]");
-  if (jump) { const el = document.getElementById("d-" + jump.dataset.jump); if (el) el.scrollIntoView({ behavior: "smooth" }); return; }
+  if (jump) { jumpToDay(jump.dataset.jump); return; }
+  if (e.target.closest("[data-earlier]")) { const first = build().days[0]; showPast = true; render(); if (first) jumpToDay(first); return; }
   const copy = e.target.closest("[data-copy]");
   if (copy) {
     const done = () => { copy.textContent = "✓ " + T[lang].copied; setTimeout(render, 1500); };
