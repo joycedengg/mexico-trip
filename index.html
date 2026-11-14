@@ -27,7 +27,9 @@
     --soft: #F6EDE2;
     --radius: 18px;
     --nav-h: 68px;
+    --col: 640px;
   }
+  @media (min-width: 900px) { :root { --col: 760px; } }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
   body {
@@ -44,7 +46,7 @@
   header {
     background: var(--terracotta);
     color: #fff;
-    padding: calc(env(safe-area-inset-top) + 18px) 20px 26px;
+    padding: calc(env(safe-area-inset-top) + 18px) max(20px, calc(50% - var(--col) / 2 + 16px)) 26px;
     position: relative;
   }
   header::after {
@@ -70,7 +72,7 @@
   }
   .lang button[aria-pressed="true"] { background: #fff; color: var(--terracotta); }
 
-  main { max-width: 640px; margin: 0 auto; padding: 26px 16px 0; }
+  main { max-width: var(--col); margin: 0 auto; padding: 26px 16px 0; }
 
   .banner {
     background: #FFF4D6; border: 1px solid #F1D78E; color: #6B5310; border-radius: 12px;
@@ -85,9 +87,10 @@
     padding: calc(env(safe-area-inset-top) + 10px) 16px 12px;
     scrollbar-width: none; -webkit-overflow-scrolling: touch;
     position: sticky; top: 0; z-index: 5; background: var(--bg);
-    border-bottom: 1px solid transparent; transition: border-color .2s, box-shadow .2s;
+    /* Paint the background edge to edge, even though the strip sits in the centered column */
+    box-shadow: 0 0 0 100vmax var(--bg); clip-path: inset(0 -100vmax -1px);
   }
-  .strip.stuck { border-bottom-color: var(--line); box-shadow: 0 6px 14px rgba(60,40,20,.06); }
+  .strip.stuck { box-shadow: 0 0 0 100vmax var(--bg), 0 1px 0 100vmax var(--line); }
   .strip::-webkit-scrollbar { display: none; }
   .chip {
     flex: 0 0 auto; border: 1px solid var(--line); background: var(--card); border-radius: 14px;
@@ -175,6 +178,15 @@
   nav button svg { width: 24px; height: 24px; }
   nav button[aria-current="page"] { color: var(--terracotta); }
 
+  @media (min-width: 900px) {
+    body { padding-bottom: 120px; }
+    nav { left: 50%; right: auto; bottom: 20px; transform: translateX(-50%); width: 420px; border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 8px 28px rgba(60,40,20,.14); padding-bottom: 0; }
+    nav .inner { height: 60px; }
+    .strip::before, .strip::after { content: ""; margin: auto; }
+    .chip { min-width: 66px; }
+    h1 { font-size: 44px; }
+    html[lang^="zh"] h1 { font-size: 48px; }
+  }
   footer { text-align: center; color: var(--muted); font-size: 14px; margin: 26px 0 0; }
   footer button { border: 0; background: none; color: var(--teal); font-weight: 600; text-decoration: underline; padding: 4px; }
   .loading { text-align: center; color: var(--muted); padding: 40px 0; }
