@@ -112,6 +112,8 @@
   .ev-title { font-weight: 650; font-size: 18px; }
   .ev-sub { color: var(--muted); font-size: 15px; }
   .notes { margin-top: 6px; font-size: 15.5px; }
+  .ev-photo { grid-column: 1 / -1; display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 14px; background: var(--soft); }
+  .st-wait { background: #FCEBD0; color: #8A5A10; }
   .empty { color: var(--muted); font-size: 15px; padding: 6px 0 2px; }
 
   .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
@@ -219,7 +221,8 @@ const SEED = {
     { "Item": "Welcome note", "English": "Our flights, hotel and daily plans, all in one place.", "中文 (auto)": "我们的航班、酒店和每日行程安排，尽在一处。" }
   ],
   days: [
-    { "Date": "", "Time": "", "What": "Parque Quetzalcóatl", "What (中文)": "克特萨尔科阿特尔公园", "Place": "Parque Quetzalcóatl", "Address": "Naucalpan, Estado de México", "Who": "Everyone", "Map link": "", "Notes": "Tours are sold out. We're on the waitlist, so the date isn't set yet.", "Notes (中文)": "旅游团门票已售罄。我们已加入候补名单，所以日期尚未确定。" }
+    { "Date": "", "Time": "", "What": "Parque Quetzalcóatl", "What (中文)": "克特萨尔科阿特尔公园", "Place": "Parque Quetzalcóatl", "Address": "Naucalpan, Estado de México", "Who": "Everyone", "Map link": "", "Notes": "Tours are sold out. We're on the waitlist, so the date isn't set yet.", "Notes (中文)": "旅游团门票已售罄。我们已加入候补名单，所以日期尚未确定。", "Status": "Waitlist", "Photo": "" },
+    { "Date": "", "Time": "", "What": "Teotihuacán hot air balloon flight", "What (中文)": "特奥蒂瓦坎热气球飞行", "Place": "Teotihuacán", "Address": "San Juan Teotihuacán, Estado de México", "Who": "", "Map link": "", "Notes": "Not booked yet. Date to be decided.", "Notes (中文)": "尚未预订，日期待定。", "Status": "Not booked yet", "Photo": "https://insidetheupgrade.com/wp-content/uploads/2025/04/Mexico-city-hot-air-balloon-.jpg" }
   ],
   flights: [
     { "Date": "12/12", "Who": "Joyce & Grace", "From": "JFK", "Depart": "1:25 PM", "To": "MEX", "Arrive": "8:30 PM", "Airline": "Delta / Aeromexico", "Flight number": "", "Status": "Not booked yet", "Notes": "Connects in Miami (MIA). About 8 hours total.", "Notes (中文)": "在迈阿密国际机场 (MIA) 转机。全程约 8 小时。" },
@@ -238,7 +241,7 @@ const T = {
     day: n => `Day ${n}`, today: "Today", nothing: "Nothing planned yet.",
     ideas: "Ideas (no date yet)", map: "Map", copy: "Copy address", copied: "Copied",
     call: "Call", checkIn: "Check in", checkOut: "Check out", flight: "Flight",
-    departs: "Departs", arrives: "Arrives", flightNo: "Flight", booked: "Booked", notBooked: "Not booked yet",
+    departs: "Departs", arrives: "Arrives", flightNo: "Flight", booked: "Booked", notBooked: "Not booked yet", waitlist: "Waitlist",
     noFlights: "No flights added yet.", noStays: "No places to stay added yet.",
     offline: "Couldn't reach the sheet. Showing the last saved copy.",
     updated: t => `Updated ${t}`, refresh: "Refresh", edit: "Edit plans",
@@ -249,7 +252,7 @@ const T = {
     day: n => `第${n}天`, today: "今天", nothing: "暂无安排。",
     ideas: "备选（日期未定）", map: "地图", copy: "复制地址", copied: "已复制",
     call: "打电话", checkIn: "入住", checkOut: "退房", flight: "航班",
-    departs: "起飞", arrives: "到达", flightNo: "航班号", booked: "已预订", notBooked: "尚未预订",
+    departs: "起飞", arrives: "到达", flightNo: "航班号", booked: "已预订", notBooked: "尚未预订", waitlist: "候补中",
     noFlights: "还没有添加航班。", noStays: "还没有添加住宿。",
     offline: "暂时无法连接表格，正在显示上次保存的内容。",
     updated: t => `更新于 ${t}`, refresh: "刷新", edit: "编辑行程",
@@ -351,6 +354,7 @@ function statusBadge(s) {
   const low = s.toLowerCase();
   if (low === "booked") return `<span class="badge st-booked">${T[lang].booked}</span>`;
   if (low.startsWith("not")) return `<span class="badge st-not">${T[lang].notBooked}</span>`;
+  if (low.startsWith("wait")) return `<span class="badge st-wait">${T[lang].waitlist}</span>`;
   return `<span class="badge">${esc(s)}</span>`;
 }
 function airport(code) {
@@ -441,8 +445,9 @@ function build() {
   return { ov, start, end, days, byDay, ideas, flights, stays };
 }
 
-function eventHtml(time, title, sub, badges, notes, actions, kind) {
+function eventHtml(time, title, sub, badges, notes, actions, kind, photo) {
   return `<div class="event">
+    ${photo ? `<img class="ev-photo" src="${esc(photo)}" alt="" loading="lazy" onerror="this.remove()">` : ""}
     <div class="time">${time || ""}</div>
     <div>
       ${kind ? `<div class="kind">${esc(kind)}</div>` : ""}
@@ -459,7 +464,8 @@ function dayItemHtml(r) {
   const place = [clean(r["Place"]), clean(r["Address"])].filter(Boolean);
   const sub = place.length && place[0] !== title ? esc(place.join(" · ")) : esc(clean(r["Address"]));
   const url = mapUrl(r["Map link"], r["Place"], r["Address"]);
-  return eventHtml(fmtTime(r["Time"]), title, sub, [whoBadge(r["Who"])], esc(pick(r, "Notes", "Notes (中文)")), mapBtn(url));
+  const photo = clean(r["Photo"]);
+  return eventHtml(fmtTime(r["Time"]), title, sub, [whoBadge(r["Who"]), statusBadge(r["Status"])], esc(pick(r, "Notes", "Notes (中文)")), mapBtn(url), "", photo);
 }
 
 /* ===== Views ===== */
