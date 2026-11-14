@@ -82,13 +82,13 @@
   .section-title { font-size: 14px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 8px 4px 10px; }
 
   /* Day picker strip */
-  html, body { overflow-x: clip; }
-  .strip-wrap { position: sticky; top: 0; z-index: 5; margin: 0 -16px 10px; }
-  /* Background and shadow run edge to edge, even though the strip sits in the centered column */
-  .strip-wrap::before { content: ""; position: absolute; top: 0; bottom: 0; left: -100vmax; right: -100vmax; background: var(--bg); z-index: -1; transition: box-shadow .2s; }
-  .strip-wrap.stuck::before { box-shadow: 0 1px 0 var(--line), 0 6px 16px rgba(60,40,20,.2), 0 1px 3px rgba(60,40,20,.4); }
+  /* Hide sideways scrolling from the full-width date bar (set on html so the sticky bar keeps working) */
+  html { overflow-x: hidden; }
+  /* The bar spans the whole window; its date chips stay in the centered column */
+  .strip-wrap { position: sticky; top: 0; z-index: 5; margin: 0 calc(50% - 50vw) 10px; background: var(--bg); transition: box-shadow .2s; }
+  .strip-wrap.stuck { box-shadow: 0 1px 0 var(--line), 0 6px 16px rgba(60,40,20,.2), 0 1px 3px rgba(60,40,20,.4); }
   .strip {
-    display: flex; gap: 8px; overflow-x: auto;
+    display: flex; gap: 8px; overflow-x: auto; max-width: var(--col); margin: 0 auto;
     padding: calc(env(safe-area-inset-top) + 10px) 16px 12px;
     scrollbar-width: none; -webkit-overflow-scrolling: touch;
   }
