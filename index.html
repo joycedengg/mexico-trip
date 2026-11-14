@@ -395,8 +395,10 @@ function fmtTimeRange(t) {
   if (minutes(a) == null || minutes(b) == null) return esc(t);
   return `${fmtTime(a)} – ${fmtTime(b)}`;
 }
-function whoBadge(w) {
+// hideEveryone: "Everyone" is the default, so only flights show it
+function whoBadge(w, hideEveryone) {
   w = clean(w); if (!w) return "";
+  if (hideEveryone && w.toLowerCase() === "everyone") return "";
   const def = CONFIG.who[w.toLowerCase()];
   return `<span class="badge ${def ? def.cls : ""}">${esc(def ? def[lang] : w)}</span>`;
 }
@@ -478,7 +480,7 @@ function build() {
     const name = esc(clean(r["Name"]));
     const url = mapUrl(r["Map link"], r["Address"]);
     const inK = parseDate(r["Check-in"]), outK = parseDate(r["Check-out"]);
-    if (inK) add(inK, { sort: 9500, html: eventHtml("", `🏨 ${T[lang].checkIn}`, name, [whoBadge(r["Who"])], "", mapBtn(url)) });
+    if (inK) add(inK, { sort: 9500, html: eventHtml("", `🏨 ${T[lang].checkIn}`, name, [whoBadge(r["Who"], true)], "", mapBtn(url)) });
     if (outK) add(outK, { sort: -1, html: eventHtml("", `🧳 ${T[lang].checkOut}`, name, [], "", "") });
   });
 
@@ -516,7 +518,7 @@ function dayItemHtml(r) {
   const sub = place.length && place[0] !== title ? esc(place.join(" · ")) : esc(clean(r["Address"]));
   const url = mapUrl(r["Map link"], r["Place"], r["Address"]);
   const photo = clean(r["Photo"]);
-  return eventHtml(fmtTimeRange(r["Time"]), title, sub, [whoBadge(r["Who"]), statusBadge(r["Status"])], esc(pick(r, "Notes", "Notes (中文)")), mapBtn(url), "", photo);
+  return eventHtml(fmtTimeRange(r["Time"]), title, sub, [whoBadge(r["Who"], true), statusBadge(r["Status"])], esc(pick(r, "Notes", "Notes (中文)")), mapBtn(url), "", photo);
 }
 
 /* ===== Views ===== */
@@ -582,7 +584,7 @@ function renderStays(trip) {
     return `<section class="card">
       <div class="ev-title" style="font-size:21px">${esc(clean(r["Name"]))}</div>
       ${addr ? `<div class="ev-sub" style="margin-top:4px">${esc(addr)}</div>` : ""}
-      <div class="badges">${whoBadge(r["Who"])}</div>
+      <div class="badges">${whoBadge(r["Who"], true)}</div>
       <div class="meta" style="margin-top:12px">
         <span><strong>${L.checkIn}</strong><br>${inK ? fmtDay(inK) : esc(clean(r["Check-in"]))}</span>
         <span style="text-align:right"><strong>${L.checkOut}</strong><br>${outK ? fmtDay(outK) : esc(clean(r["Check-out"]))}</span>
