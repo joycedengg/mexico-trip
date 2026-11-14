@@ -126,6 +126,7 @@
   .notes { margin-top: 6px; font-size: 15.5px; }
   .ev-photo { grid-column: 1 / -1; display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 14px; background: var(--soft); }
   .st-wait { background: #FCEBD0; color: #8A5A10; }
+  .st-tent { background: #ECE7F6; color: #5B4A8B; }
   /* Phones: timeline rail instead of a time column, so text gets the full width */
   @media (max-width: 560px) {
     .event { grid-template-columns: minmax(0, 1fr); gap: 0; position: relative; padding: 12px 0 12px 24px; border-top: 0; }
@@ -274,7 +275,7 @@ const T = {
     day: n => `Day ${n}`, today: "Today", nothing: "Nothing planned yet.",
     ideas: "Ideas (no date yet)", map: "Map", copy: "Copy address", copied: "Copied",
     call: "Call", checkIn: "Check in", checkOut: "Check out", flight: "Flight",
-    departs: "Departs", arrives: "Arrives", flightNo: "Flight", booked: "Booked", notBooked: "Not booked yet", waitlist: "Waitlist",
+    departs: "Departs", arrives: "Arrives", flightNo: "Flight", booked: "Booked", notBooked: "Not booked yet", waitlist: "Waitlist", tentative: "Tentative",
     noFlights: "No flights added yet.", noStays: "No places to stay added yet.",
     offline: "Couldn't reach the sheet. Showing the last saved copy.",
     updated: t => `Updated ${t}`, refresh: "Refresh", edit: "Edit plans",
@@ -286,7 +287,7 @@ const T = {
     day: n => `第${n}天`, today: "今天", nothing: "暂无安排。",
     ideas: "备选（日期未定）", map: "地图", copy: "复制地址", copied: "已复制",
     call: "打电话", checkIn: "入住", checkOut: "退房", flight: "航班",
-    departs: "起飞", arrives: "到达", flightNo: "航班号", booked: "已预订", notBooked: "尚未预订", waitlist: "候补中",
+    departs: "起飞", arrives: "到达", flightNo: "航班号", booked: "已预订", notBooked: "尚未预订", waitlist: "候补中", tentative: "暂定",
     noFlights: "还没有添加航班。", noStays: "还没有添加住宿。",
     offline: "暂时无法连接表格，正在显示上次保存的内容。",
     updated: t => `更新于 ${t}`, refresh: "刷新", edit: "编辑行程",
@@ -402,9 +403,12 @@ function whoBadge(w, hideEveryone) {
   const def = CONFIG.who[w.toLowerCase()];
   return `<span class="badge ${def ? def.cls : ""}">${esc(def ? def[lang] : w)}</span>`;
 }
+// Status can hold several labels separated by commas, e.g. "Tentative, Not booked yet"
 function statusBadge(s) {
   s = clean(s); if (!s) return "";
+  if (s.includes(",")) return s.split(",").map(statusBadge).join("");
   const low = s.toLowerCase();
+  if (low === "tentative") return `<span class="badge st-tent">${T[lang].tentative}</span>`;
   if (low === "booked") return `<span class="badge st-booked">${T[lang].booked}</span>`;
   if (low.startsWith("not")) return `<span class="badge st-not">${T[lang].notBooked}</span>`;
   if (low.startsWith("wait")) return `<span class="badge st-wait">${T[lang].waitlist}</span>`;
