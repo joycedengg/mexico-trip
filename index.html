@@ -114,6 +114,18 @@
   .notes { margin-top: 6px; font-size: 15.5px; }
   .ev-photo { grid-column: 1 / -1; display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 14px; background: var(--soft); }
   .st-wait { background: #FCEBD0; color: #8A5A10; }
+  /* Phones: timeline rail instead of a time column, so text gets the full width */
+  @media (max-width: 560px) {
+    .event { grid-template-columns: minmax(0, 1fr); gap: 0; position: relative; padding: 12px 0 12px 24px; border-top: 0; }
+    .event::before { content: ""; position: absolute; left: 5px; top: 0; bottom: 0; width: 2px; background: var(--line); }
+    .event::after { content: ""; position: absolute; left: 0; top: 17px; width: 12px; height: 12px; border-radius: 50%; background: var(--terracotta); box-shadow: 0 0 0 3px #fff; }
+    .day-head + .event::before, .event:first-child::before { top: 19px; }
+    .event:last-child::before { bottom: auto; height: 19px; }
+    .day-head + .event:last-child::before, .event:first-child:last-child::before { display: none; }
+    .time { padding-top: 0; font-size: 14.5px; }
+    .time:empty { display: none; }
+    .ev-photo { margin-bottom: 10px; }
+  }
   .empty { color: var(--muted); font-size: 15px; padding: 6px 0 2px; }
 
   .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
@@ -344,6 +356,20 @@ function fmtTime(t) {
   if (lang === "zh") return `${h}:${mm}`;
   return `${((h + 11) % 12) + 1}:${mm} ${h < 12 ? "AM" : "PM"}`;
 }
+// Handles single times ("9:30 AM") and ranges ("10am-12pm", "10:00 AM – 12:00 PM", "10点至12点").
+function fmtTimeRange(t) {
+  t = clean(t); if (!t) return "";
+  const parts = t.split(/\s*(?:-|–|—|~|to|至|到)\s*/i).filter(Boolean);
+  if (parts.length !== 2) return fmtTime(t);
+  let [a, b] = parts;
+  const ap = /([ap])\.?m/i.exec(b);
+  if (ap && !/[ap]\.?m/i.test(a) && minutes(a) != null) {
+    const guess = a + " " + ap[1] + "m";
+    a = minutes(guess) <= minutes(b) ? guess : a + " am";
+  }
+  if (minutes(a) == null || minutes(b) == null) return esc(t);
+  return `${fmtTime(a)} – ${fmtTime(b)}`;
+}
 function whoBadge(w) {
   w = clean(w); if (!w) return "";
   const def = CONFIG.who[w.toLowerCase()];
@@ -465,7 +491,7 @@ function dayItemHtml(r) {
   const sub = place.length && place[0] !== title ? esc(place.join(" · ")) : esc(clean(r["Address"]));
   const url = mapUrl(r["Map link"], r["Place"], r["Address"]);
   const photo = clean(r["Photo"]);
-  return eventHtml(fmtTime(r["Time"]), title, sub, [whoBadge(r["Who"]), statusBadge(r["Status"])], esc(pick(r, "Notes", "Notes (中文)")), mapBtn(url), "", photo);
+  return eventHtml(fmtTimeRange(r["Time"]), title, sub, [whoBadge(r["Who"]), statusBadge(r["Status"])], esc(pick(r, "Notes", "Notes (中文)")), mapBtn(url), "", photo);
 }
 
 /* ===== Views ===== */
