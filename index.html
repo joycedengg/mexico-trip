@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#C8553D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mexico City">
+<title>Mexico City Trip</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23C8553D'/><text x='50' y='68' font-size='54' text-anchor='middle' fill='white' font-family='Georgia,serif'>MX</text></svg>">
+<style>
+  :root {
+    --bg: #FBF6EF;
+    --card: #FFFFFF;
+    --ink: #2B2420;
+    --muted: #7A6F66;
+    --line: #EDE3D6;
+    --terracotta: #C8553D;
+    --teal: #1F6F6B;
+    --marigold: #E9A23B;
+    --rose: #B0466E;
+    --soft: #F6EDE2;
+    --radius: 18px;
+    --nav-h: 68px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", Roboto, sans-serif;
+    padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 24px);
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  a { color: var(--teal); }
+
+  /* Header */
+  header {
+    background: var(--terracotta);
+    color: #fff;
+    padding: calc(env(safe-area-inset-top) + 18px) 20px 26px;
+    position: relative;
+  }
+  header::after {
+    content: "";
+    position: absolute; left: 0; right: 0; bottom: -11px; height: 12px;
+    background:
+      linear-gradient(135deg, var(--terracotta) 50%, transparent 50%) 0 0 / 22px 12px repeat-x,
+      linear-gradient(225deg, var(--terracotta) 50%, transparent 50%) 0 0 / 22px 12px repeat-x;
+  }
+  .top-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .eyebrow { font-size: 14px; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
+  h1 { font-family: Georgia, "Songti SC", "Noto Serif SC", serif; font-weight: 700; font-size: 32px; line-height: 1.15; margin: 10px 0 6px; }
+  .welcome { margin: 0; opacity: .92; font-size: 16px; }
+
+  .lang {
+    display: inline-flex; background: rgba(255,255,255,.18); border-radius: 999px; padding: 3px;
+  }
+  .lang button {
+    border: 0; background: transparent; color: #fff; padding: 6px 14px; border-radius: 999px; font-size: 15px; font-weight: 600;
+  }
+  .lang button[aria-pressed="true"] { background: #fff; color: var(--terracotta); }
+
+  main { max-width: 640px; margin: 0 auto; padding: 26px 16px 0; }
+
+  .banner {
+    background: #FFF4D6; border: 1px solid #F1D78E; color: #6B5310; border-radius: 12px;
+    padding: 10px 14px; font-size: 15px; margin-bottom: 16px;
+  }
+
+  .section-title { font-size: 14px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 8px 4px 10px; }
+
+  /* Day picker strip */
+  .strip {
+    display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 14px; margin: 0 -16px 6px; padding-left: 16px; padding-right: 16px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .strip::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto; border: 1px solid var(--line); background: var(--card); border-radius: 14px;
+    padding: 8px 12px; text-align: center; min-width: 62px;
+  }
+  .chip .dow { display: block; font-size: 13px; color: var(--muted); }
+  .chip .num { display: block; font-size: 20px; font-weight: 700; }
+  .chip.today { border-color: var(--terracotta); }
+  .chip.has { position: relative; }
+  .chip.has::after { content: ""; position: absolute; left: 50%; bottom: 5px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--terracotta); }
+
+  /* Cards */
+  .card {
+    background: var(--card); border-radius: var(--radius); padding: 18px; margin-bottom: 14px;
+    box-shadow: 0 1px 2px rgba(60,40,20,.06), 0 4px 14px rgba(60,40,20,.05);
+    scroll-margin-top: 16px;
+  }
+  .day-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+  .day-head h2 { margin: 0; font-size: 21px; }
+  .day-num { font-size: 14px; color: var(--muted); white-space: nowrap; }
+  .today-tag { background: var(--terracotta); color: #fff; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 9px; margin-left: 6px; vertical-align: 2px; }
+
+  .event { display: grid; grid-template-columns: 76px 1fr; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .event:first-of-type { border-top: 0; }
+  .time { font-weight: 700; font-size: 15px; color: var(--teal); padding-top: 2px; }
+  .ev-title { font-weight: 650; font-size: 18px; }
+  .ev-sub { color: var(--muted); font-size: 15px; }
+  .notes { margin-top: 6px; font-size: 15.5px; }
+  .empty { color: var(--muted); font-size: 15px; padding: 6px 0 2px; }
+
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .badge { font-size: 12.5px; font-weight: 700; border-radius: 999px; padding: 2px 10px; background: var(--soft); color: var(--ink); }
+  .who-everyone { background: #E3F0EE; color: var(--teal); }
+  .who-girls { background: #F8E1EA; color: var(--rose); }
+  .who-parents { background: #FCEBD0; color: #8A5A10; }
+  .st-booked { background: #E3F0EE; color: var(--teal); }
+  .st-not { background: #FDE6E1; color: #A23A24; }
+  .kind { font-size: 12px; font-weight: 700; color: var(--terracotta); text-transform: uppercase; letter-spacing: .05em; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px; text-decoration: none;
+    border: 1px solid var(--line); background: var(--soft); color: var(--ink);
+    padding: 8px 14px; border-radius: 12px; font-size: 15px; font-weight: 600;
+  }
+  .btn.primary { background: var(--teal); border-color: var(--teal); color: #fff; }
+
+  /* Flights */
+  .route { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 12px 0 4px; }
+  .route .end { text-align: left; }
+  .route .end.right { text-align: right; }
+  .route .t { font-size: 24px; font-weight: 750; }
+  .route .code { font-size: 15px; font-weight: 700; color: var(--teal); }
+  .route .city { font-size: 14px; color: var(--muted); }
+  .route .arrow { color: var(--terracotta); font-size: 22px; }
+  .meta { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 15px; }
+
+  /* Bottom nav */
+  nav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+    background: rgba(255,255,255,.96); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav .inner { max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); height: var(--nav-h); }
+  nav button { border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 13.5px; color: var(--muted); font-weight: 600; }
+  nav button svg { width: 24px; height: 24px; }
+  nav button[aria-current="page"] { color: var(--terracotta); }
+
+  footer { text-align: center; color: var(--muted); font-size: 14px; margin: 26px 0 0; }
+  footer button { border: 0; background: none; color: var(--teal); font-weight: 600; text-decoration: underline; padding: 4px; }
+  .loading { text-align: center; color: var(--muted); padding: 40px 0; }
+</style>
+</head>
+<body>
+<header>
+  <div class="top-row">
+    <span class="eyebrow" id="dates"></span>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-lang="zh" aria-pressed="false">中文</button>
+    </div>
+  </div>
+  <h1 id="title">Mexico City</h1>
+  <p class="welcome" id="welcome"></p>
+</header>
+
+<main id="main"><div class="loading">Loading…</div></main>
+
+<nav>
+  <div class="inner">
+    <button type="button" data-view="days" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
+      <span data-t="navDays"></span>
+    </button>
+    <button type="button" data-view="flights">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 13.5 3 11l1.5-1.5 8 1 4-4.5c1-1 2.6-1.3 3.2-.7.6.6.3 2.2-.7 3.2l-4.5 4 1 8L14 22l-2.5-7.5"/></svg>
+      <span data-t="navFlights"></span>
+    </button>
+    <button type="button" data-view="stays">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V8l9-5 9 5v12"/><path d="M9 20v-6h6v6"/></svg>
+      <span data-t="navStays"></span>
+    </button>
+  </div>
+</nav>
+
+<script>
+/* ===== Settings you might change ===== */
+const CONFIG = {
+  // The Google Sheet that holds the trip details. It must be shared as "Anyone with the link can view".
+  sheetId: "1L_mc70jjRSr94fhUyOa9FP2jr5JLTHR37n9lmi-GXGA",
+  tabs: { overview: "Overview", days: "Days", flights: "Flights", stays: "Stays" },
+  // Home city of the trip. Used to label airport codes.
+  airports: {
+    JFK: ["New York", "纽约"], LGA: ["New York", "纽约"], EWR: ["Newark", "纽瓦克"],
+    MEX: ["Mexico City", "墨西哥城"], NLU: ["Mexico City (AIFA)", "墨西哥城（AIFA）"],
+    CLT: ["Charlotte", "夏洛特"], ATL: ["Atlanta", "亚特兰大"], MIA: ["Miami", "迈阿密"]
+  },
+  // How names in the "Who" column read in each language, and which color they get.
+  who: {
+    "everyone": { en: "Everyone", zh: "全家", cls: "who-everyone" },
+    "joyce & grace": { en: "Joyce & Grace", zh: "Joyce 和 Grace", cls: "who-girls" },
+    "mom & dad": { en: "Mom & Dad", zh: "爸妈", cls: "who-parents" }
+  }
+};
+
+/* Copy of the sheet used when the sheet can't be reached (first visit offline, etc.) */
+const SEED = {
+  overview: [
+    { "Item": "Trip title", "English": "Mexico City Family Trip", "中文 (auto)": "墨西哥城家庭之旅" },
+    { "Item": "Start date", "English": "12/12/2026" },
+    { "Item": "End date", "English": "12/22/2026" },
+    { "Item": "Welcome note", "English": "Our flights, hotel and daily plans, all in one place.", "中文 (auto)": "我们的航班、酒店和每日行程安排，尽在一处。" }
+  ],
+  days: [
+    { "Date": "", "Time": "", "What": "Parque Quetzalcóatl", "What (中文)": "克特萨尔科阿特尔公园", "Place": "Parque Quetzalcóatl", "Address": "Naucalpan, Estado de México", "Who": "Everyone", "Map link": "", "Notes": "Tours are sold out. We're on the waitlist, so the date isn't set yet.", "Notes (中文)": "旅游团门票已售罄。我们已加入候补名单，所以日期尚未确定。" }
+  ],
+  flights: [
+    { "Date": "12/12", "Who": "Joyce & Grace", "From": "JFK", "Depart": "1:25 PM", "To": "MEX", "Arrive": "8:30 PM", "Airline": "Delta / Aeromexico", "Flight number": "", "Status": "Not booked yet", "Notes": "Connects in Miami (MIA). About 8 hours total.", "Notes (中文)": "在迈阿密国际机场 (MIA) 转机。全程约 8 小时。" },
+    { "Date": "12/13", "Who": "Mom & Dad", "From": "CLT", "Depart": "9:52 AM", "To": "MEX", "Arrive": "3:05 PM", "Airline": "Delta / Aeromexico", "Flight number": "", "Status": "Not booked yet", "Notes": "Connects in Atlanta (ATL) with a 1 hour layover. About 6 hours total.", "Notes (中文)": "在亚特兰大（ATL）转机，中转停留1小时。全程约6小时。" },
+    { "Date": "12/22", "Who": "Everyone", "From": "MEX", "Depart": "7:05 AM", "To": "CLT", "Arrive": "4:09 PM", "Airline": "Delta / Aeromexico", "Flight number": "", "Status": "Not booked yet", "Notes": "All four of us fly home together. Connects in Atlanta (ATL) with a 3.5 hour layover.", "Notes (中文)": "我们四个人一起乘飞机回家。在亚特兰大（ATL）转机，中途停留3.5小时。" }
+  ],
+  stays: [
+    { "Name": "Hotel (not booked yet)", "Address": "", "Check-in": "12/12", "Check-out": "12/22", "Who": "Everyone", "Phone": "", "Map link": "", "Notes": "Joyce & Grace check in the night of Dec 12. Mom & Dad arrive Dec 13.", "Notes (中文)": "Joyce 和 Grace 于 12 月 12 日晚入住。爸爸妈妈于 12 月 13 日到达。" }
+  ]
+};
+
+/* ===== Interface text ===== */
+const T = {
+  en: {
+    navDays: "Days", navFlights: "Flights", navStays: "Stay",
+    day: n => `Day ${n}`, today: "Today", nothing: "Nothing planned yet.",
+    ideas: "Ideas (no date yet)", map: "Map", copy: "Copy address", copied: "Copied",
+    call: "Call", checkIn: "Check in", checkOut: "Check out", flight: "Flight",
+    departs: "Departs", arrives: "Arrives", flightNo: "Flight", booked: "Booked", notBooked: "Not booked yet",
+    noFlights: "No flights added yet.", noStays: "No places to stay added yet.",
+    offline: "Couldn't reach the sheet. Showing the last saved copy.",
+    updated: t => `Updated ${t}`, refresh: "Refresh", edit: "Edit plans",
+    loading: "Loading…"
+  },
+  zh: {
+    navDays: "每日行程", navFlights: "航班", navStays: "住宿",
+    day: n => `第${n}天`, today: "今天", nothing: "暂无安排。",
+    ideas: "备选（日期未定）", map: "地图", copy: "复制地址", copied: "已复制",
+    call: "打电话", checkIn: "入住", checkOut: "退房", flight: "航班",
+    departs: "起飞", arrives: "到达", flightNo: "航班号", booked: "已预订", notBooked: "尚未预订",
+    noFlights: "还没有添加航班。", noStays: "还没有添加住宿。",
+    offline: "暂时无法连接表格，正在显示上次保存的内容。",
+    updated: t => `更新于 ${t}`, refresh: "刷新", edit: "编辑行程",
+    loading: "加载中…"
+  }
+};
+const DOW_EN = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const DOW_ZH = ["周日","周一","周二","周三","周四","周五","周六"];
+const MON_EN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+/* ===== State ===== */
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+};
+const params = new URLSearchParams(location.search);
+let lang = params.get("lang") || store.get("trip-lang") || ((navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en");
+if (!T[lang]) lang = "en";
+let view = store.get("trip-view") || "days";
+let data = null, offline = false, updatedAt = null, scrolledToToday = false;
+
+/* ===== Helpers ===== */
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const clean = s => {
+  s = (s == null ? "" : String(s)).trim();
+  if (/^(#VALUE!|#ERROR!|#N\/A|#NAME\?|Loading\.\.\.)$/i.test(s)) return "";
+  return s;
+};
+// Pick the right language from an English column and its 中文 partner, falling back to whichever is filled in.
+function pick(row, enKey, zhKey) {
+  const en = clean(row[enKey]), zh = clean(row[zhKey]);
+  return lang === "zh" ? (zh || en) : (en || zh);
+}
+function parseCSV(text) {
+  const rows = []; let row = [], field = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else q = false; }
+      else field += c;
+    } else if (c === '"') q = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+    else if (c !== "\r") field += c;
+  }
+  if (field !== "" || row.length) { row.push(field); rows.push(row); }
+  if (!rows.length) return [];
+  const head = rows[0].map(h => h.trim());
+  return rows.slice(1).map(r => Object.fromEntries(head.map((h, i) => [h, r[i] || ""])));
+}
+let tripYear = new Date().getFullYear();
+function parseDate(s) {
+  s = clean(s); if (!s) return null;
+  let y, m, d, x;
+  if ((x = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/))) { y = +x[1]; m = +x[2]; d = +x[3]; }
+  else if ((x = s.match(/^(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?$/))) { m = +x[1]; d = +x[2]; y = x[3] ? +x[3] : tripYear; if (y < 100) y += 2000; }
+  else if ((x = s.match(/(\d{1,2})\s*月\s*(\d{1,2})/))) { m = +x[1]; d = +x[2]; y = tripYear; }
+  else if ((x = s.match(/^([A-Za-z]{3,})\.?\s+(\d{1,2})(?:,?\s*(\d{4}))?/))) {
+    m = MON_EN.findIndex(n => x[1].toLowerCase().startsWith(n.toLowerCase())) + 1; d = +x[2]; y = x[3] ? +x[3] : tripYear;
+    if (!m) return null;
+  } else return null;
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+const keyToDate = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+const dateKey = dt => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+function fmtDay(k) {
+  const dt = keyToDate(k);
+  return lang === "zh"
+    ? `${dt.getMonth() + 1}月${dt.getDate()}日 ${DOW_ZH[dt.getDay()]}`
+    : `${DOW_EN[dt.getDay()]}, ${MON_EN[dt.getMonth()]} ${dt.getDate()}`;
+}
+function fmtRange(a, b) {
+  const A = keyToDate(a), B = keyToDate(b);
+  if (lang === "zh") return `${A.getFullYear()}年${A.getMonth() + 1}月${A.getDate()}日 – ${B.getMonth() + 1}月${B.getDate()}日`;
+  return `${MON_EN[A.getMonth()]} ${A.getDate()} – ${A.getMonth() === B.getMonth() ? "" : MON_EN[B.getMonth()] + " "}${B.getDate()}, ${B.getFullYear()}`;
+}
+function minutes(t) {
+  t = clean(t); if (!t) return null;
+  const x = t.match(/(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)?/i); if (!x) return null;
+  let h = +x[1]; const mm = +(x[2] || 0); const ap = (x[3] || "").toLowerCase();
+  if (ap.startsWith("p") && h < 12) h += 12;
+  if (ap.startsWith("a") && h === 12) h = 0;
+  if (/下午|晚上/.test(t) && h < 12) h += 12;
+  return h * 60 + mm;
+}
+function fmtTime(t) {
+  const m = minutes(t); if (m == null) return esc(clean(t));
+  const h = Math.floor(m / 60), mm = String(m % 60).padStart(2, "0");
+  if (lang === "zh") return `${h}:${mm}`;
+  return `${((h + 11) % 12) + 1}:${mm} ${h < 12 ? "AM" : "PM"}`;
+}
+function whoBadge(w) {
+  w = clean(w); if (!w) return "";
+  const def = CONFIG.who[w.toLowerCase()];
+  return `<span class="badge ${def ? def.cls : ""}">${esc(def ? def[lang] : w)}</span>`;
+}
+function statusBadge(s) {
+  s = clean(s); if (!s) return "";
+  const low = s.toLowerCase();
+  if (low === "booked") return `<span class="badge st-booked">${T[lang].booked}</span>`;
+  if (low.startsWith("not")) return `<span class="badge st-not">${T[lang].notBooked}</span>`;
+  return `<span class="badge">${esc(s)}</span>`;
+}
+function airport(code) {
+  code = clean(code); const a = CONFIG.airports[code.toUpperCase()];
+  return { code: esc(code), city: a ? a[lang === "zh" ? 1 : 0] : "" };
+}
+function mapUrl(link, ...parts) {
+  link = clean(link);
+  if (/^https?:\/\//i.test(link)) return link;
+  const q = parts.map(clean).filter(Boolean).join(", ");
+  return q ? "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q) : "";
+}
+const mapBtn = url => url ? `<a class="btn primary" href="${esc(url)}" target="_blank" rel="noopener">📍 ${T[lang].map}</a>` : "";
+
+/* ===== Loading data ===== */
+async function fetchTab(name) {
+  const url = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(name)}&_=${Date.now()}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(res.status);
+  const text = await res.text();
+  if (/^\s*</.test(text)) throw new Error("not csv"); // sign-in page means the sheet isn't shared by link
+  return parseCSV(text);
+}
+async function load() {
+  try {
+    const keys = Object.keys(CONFIG.tabs);
+    const results = await Promise.all(keys.map(k => fetchTab(CONFIG.tabs[k])));
+    data = Object.fromEntries(keys.map((k, i) => [k, results[i]]));
+    updatedAt = new Date(); offline = false;
+    store.set("trip-cache", JSON.stringify({ data, at: updatedAt.toISOString() }));
+  } catch (e) {
+    const cached = store.get("trip-cache");
+    if (cached) { try { const c = JSON.parse(cached); data = c.data; updatedAt = new Date(c.at); } catch (_) { data = SEED; } }
+    else data = SEED;
+    offline = true;
+  }
+  render();
+}
+
+/* ===== Building the trip ===== */
+function build() {
+  const ov = {};
+  (data.overview || []).forEach(r => { const k = clean(r["Item"]).toLowerCase(); if (k) ov[k] = r; });
+  const startRaw = ov["start date"] && clean(ov["start date"]["English"]);
+  const endRaw = ov["end date"] && clean(ov["end date"]["English"]);
+  const yr = (startRaw || "").match(/\d{4}/); if (yr) tripYear = +yr[0];
+
+  const flights = (data.flights || []).filter(r => clean(r["From"]) || clean(r["To"]))
+    .map(r => ({ r, key: parseDate(r["Date"]) }))
+    .sort((a, b) => (a.key || "9").localeCompare(b.key || "9") || (minutes(a.r["Depart"]) ?? 0) - (minutes(b.r["Depart"]) ?? 0));
+  const stays = (data.stays || []).filter(r => clean(r["Name"]) || clean(r["Address"]));
+  const items = (data.days || []).filter(r => clean(r["What"]) || clean(r["What (中文)"]) || clean(r["Place"]));
+
+  const byDay = {}, ideas = [];
+  const add = (k, ev) => (byDay[k] = byDay[k] || []).push(ev);
+
+  items.forEach(r => {
+    const k = parseDate(r["Date"]);
+    const ev = { sort: minutes(r["Time"]) ?? 9000, html: dayItemHtml(r) };
+    k ? add(k, ev) : ideas.push(ev);
+  });
+  flights.forEach(({ r, key }) => {
+    if (!key) return;
+    const f = airport(r["From"]), t = airport(r["To"]);
+    const title = `${f.city || f.code} → ${t.city || t.code}`;
+    const sub = [clean(r["Arrive"]) ? `${T[lang].arrives} ${fmtTime(r["Arrive"])}` : "", esc(clean(r["Airline"])), clean(r["Flight number"]) ? `${T[lang].flightNo} ${esc(clean(r["Flight number"]))}` : ""].filter(Boolean).join(" · ");
+    add(key, { sort: minutes(r["Depart"]) ?? 8999, html: eventHtml(fmtTime(r["Depart"]), `✈️ ${title}`, sub, [whoBadge(r["Who"])], "", "", T[lang].flight) });
+  });
+  stays.forEach(r => {
+    const name = esc(clean(r["Name"]));
+    const url = mapUrl(r["Map link"], r["Address"]);
+    const inK = parseDate(r["Check-in"]), outK = parseDate(r["Check-out"]);
+    if (inK) add(inK, { sort: 9500, html: eventHtml("", `🏨 ${T[lang].checkIn}`, name, [whoBadge(r["Who"])], "", mapBtn(url)) });
+    if (outK) add(outK, { sort: -1, html: eventHtml("", `🧳 ${T[lang].checkOut}`, name, [], "", "") });
+  });
+
+  let start = parseDate(startRaw), end = parseDate(endRaw);
+  const allKeys = Object.keys(byDay).sort();
+  if (!start) start = allKeys[0];
+  if (!end) end = allKeys[allKeys.length - 1];
+  const days = [];
+  if (start && end) {
+    for (let d = keyToDate(start); dateKey(d) <= end; d.setDate(d.getDate() + 1)) days.push(dateKey(d));
+  }
+  allKeys.forEach(k => { if (!days.includes(k)) days.push(k); });
+  days.sort();
+
+  return { ov, start, end, days, byDay, ideas, flights, stays };
+}
+
+function eventHtml(time, title, sub, badges, notes, actions, kind) {
+  return `<div class="event">
+    <div class="time">${time || ""}</div>
+    <div>
+      ${kind ? `<div class="kind">${esc(kind)}</div>` : ""}
+      <div class="ev-title">${title}</div>
+      ${sub ? `<div class="ev-sub">${sub}</div>` : ""}
+      ${badges.filter(Boolean).length ? `<div class="badges">${badges.join("")}</div>` : ""}
+      ${notes ? `<div class="notes">${notes}</div>` : ""}
+      ${actions ? `<div class="actions">${actions}</div>` : ""}
+    </div>
+  </div>`;
+}
+function dayItemHtml(r) {
+  const title = esc(pick(r, "What", "What (中文)") || clean(r["Place"]));
+  const place = [clean(r["Place"]), clean(r["Address"])].filter(Boolean);
+  const sub = place.length && place[0] !== title ? esc(place.join(" · ")) : esc(clean(r["Address"]));
+  const url = mapUrl(r["Map link"], r["Place"], r["Address"]);
+  return eventHtml(fmtTime(r["Time"]), title, sub, [whoBadge(r["Who"])], esc(pick(r, "Notes", "Notes (中文)")), mapBtn(url));
+}
+
+/* ===== Views ===== */
+function renderDays(trip) {
+  const todayK = dateKey(new Date());
+  const L = T[lang];
+  let html = `<div class="strip" id="strip">` + trip.days.map((k, i) => {
+    const dt = keyToDate(k);
+    return `<button type="button" class="chip ${k === todayK ? "today" : ""} ${trip.byDay[k] ? "has" : ""}" data-jump="${k}">
+      <span class="dow">${lang === "zh" ? DOW_ZH[dt.getDay()] : DOW_EN[dt.getDay()]}</span>
+      <span class="num">${dt.getDate()}</span></button>`;
+  }).join("") + `</div>`;
+
+  html += trip.days.map((k, i) => {
+    const evs = (trip.byDay[k] || []).sort((a, b) => a.sort - b.sort);
+    return `<section class="card" id="d-${k}">
+      <div class="day-head"><h2>${fmtDay(k)}${k === todayK ? `<span class="today-tag">${L.today}</span>` : ""}</h2>
+      <span class="day-num">${L.day(i + 1)}</span></div>
+      ${evs.length ? evs.map(e => e.html).join("") : `<div class="empty">${L.nothing}</div>`}
+    </section>`;
+  }).join("");
+
+  if (trip.ideas.length) {
+    html += `<div class="section-title">${L.ideas}</div><section class="card">${trip.ideas.map(e => e.html).join("")}</section>`;
+  }
+  return html;
+}
+function renderFlights(trip) {
+  const L = T[lang];
+  if (!trip.flights.length) return `<section class="card"><div class="empty">${L.noFlights}</div></section>`;
+  return trip.flights.map(({ r, key }) => {
+    const f = airport(r["From"]), t = airport(r["To"]);
+    const notes = esc(pick(r, "Notes", "Notes (中文)"));
+    const meta = [esc(clean(r["Airline"])), clean(r["Flight number"]) ? `${L.flightNo} ${esc(clean(r["Flight number"]))}` : ""].filter(Boolean).join(" · ");
+    return `<section class="card">
+      <div class="day-head"><h2>${key ? fmtDay(key) : esc(clean(r["Date"]))}</h2></div>
+      <div class="badges">${whoBadge(r["Who"])}${statusBadge(r["Status"])}</div>
+      <div class="route">
+        <div class="end"><div class="t">${fmtTime(r["Depart"])}</div><div class="code">${f.code}</div><div class="city">${esc(f.city)}</div></div>
+        <div class="arrow">✈︎</div>
+        <div class="end right"><div class="t">${fmtTime(r["Arrive"])}</div><div class="code">${t.code}</div><div class="city">${esc(t.city)}</div></div>
+      </div>
+      ${meta ? `<div class="meta"><span>${meta}</span></div>` : ""}
+      ${notes ? `<div class="notes">${notes}</div>` : ""}
+    </section>`;
+  }).join("");
+}
+function renderStays(trip) {
+  const L = T[lang];
+  if (!trip.stays.length) return `<section class="card"><div class="empty">${L.noStays}</div></section>`;
+  return trip.stays.map(r => {
+    const addr = clean(r["Address"]), phone = clean(r["Phone"]);
+    const inK = parseDate(r["Check-in"]), outK = parseDate(r["Check-out"]);
+    const url = mapUrl(r["Map link"], addr);
+    const notes = esc(pick(r, "Notes", "Notes (中文)"));
+    return `<section class="card">
+      <div class="ev-title" style="font-size:21px">${esc(clean(r["Name"]))}</div>
+      ${addr ? `<div class="ev-sub" style="margin-top:4px">${esc(addr)}</div>` : ""}
+      <div class="badges">${whoBadge(r["Who"])}</div>
+      <div class="meta" style="margin-top:12px">
+        <span><strong>${L.checkIn}</strong><br>${inK ? fmtDay(inK) : esc(clean(r["Check-in"]))}</span>
+        <span style="text-align:right"><strong>${L.checkOut}</strong><br>${outK ? fmtDay(outK) : esc(clean(r["Check-out"]))}</span>
+      </div>
+      ${notes ? `<div class="notes">${notes}</div>` : ""}
+      <div class="actions">
+        ${mapBtn(url)}
+        ${addr ? `<button type="button" class="btn" data-copy="${esc(addr)}">📋 ${L.copy}</button>` : ""}
+        ${phone ? `<a class="btn" href="tel:${esc(phone.replace(/[^\d+]/g, ""))}">📞 ${L.call}</a>` : ""}
+      </div>
+    </section>`;
+  }).join("");
+}
+
+function render() {
+  const L = T[lang];
+  document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+  document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+  document.querySelectorAll("[data-t]").forEach(el => el.textContent = L[el.dataset.t]);
+  document.querySelectorAll("nav button").forEach(b => b.dataset.view === view ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+  if (!data) return;
+
+  const trip = build();
+  const title = trip.ov["trip title"] ? pick(trip.ov["trip title"], "English", "中文 (auto)") : "Mexico City";
+  document.getElementById("title").textContent = title;
+  document.title = title;
+  document.getElementById("welcome").textContent = trip.ov["welcome note"] ? pick(trip.ov["welcome note"], "English", "中文 (auto)") : "";
+  document.getElementById("dates").textContent = trip.start && trip.end ? fmtRange(trip.start, trip.end) : "";
+
+  let html = offline ? `<div class="banner">${L.offline}</div>` : "";
+  html += view === "flights" ? renderFlights(trip) : view === "stays" ? renderStays(trip) : renderDays(trip);
+  const time = updatedAt ? updatedAt.toLocaleString(lang === "zh" ? "zh-CN" : "en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
+  html += `<footer>${time ? L.updated(time) + " · " : ""}<button type="button" id="refresh">${L.refresh}</button> · <a href="https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/edit" target="_blank" rel="noopener">${L.edit}</a></footer>`;
+  document.getElementById("main").innerHTML = html;
+
+  if (view === "days" && !scrolledToToday) {
+    scrolledToToday = true;
+    const el = document.getElementById("d-" + dateKey(new Date()));
+    if (el) el.scrollIntoView();
+  }
+}
+
+/* ===== Events ===== */
+document.querySelector(".lang").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  lang = b.dataset.lang; store.set("trip-lang", lang); render();
+});
+document.querySelector("nav").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  view = b.dataset.view; store.set("trip-view", view); render(); window.scrollTo(0, 0);
+});
+document.getElementById("main").addEventListener("click", e => {
+  const jump = e.target.closest("[data-jump]");
+  if (jump) { const el = document.getElementById("d-" + jump.dataset.jump); if (el) el.scrollIntoView({ behavior: "smooth" }); return; }
+  const copy = e.target.closest("[data-copy]");
+  if (copy) {
+    const done = () => { copy.textContent = "✓ " + T[lang].copied; setTimeout(render, 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(copy.dataset.copy).then(done, done); else done();
+    return;
+  }
+  if (e.target.id === "refresh") { e.target.textContent = T[lang].loading; load(); }
+});
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && data) load(); });
+
+render();
+load();
+</script>
+</body>
+</html>
