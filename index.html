@@ -82,15 +82,16 @@
   .section-title { font-size: 14px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 8px 4px 10px; }
 
   /* Day picker strip */
+  html, body { overflow-x: clip; }
+  .strip-wrap { position: sticky; top: 0; z-index: 5; margin: 0 -16px 10px; }
+  /* Background and shadow run edge to edge, even though the strip sits in the centered column */
+  .strip-wrap::before { content: ""; position: absolute; top: 0; bottom: 0; left: -100vmax; right: -100vmax; background: var(--bg); z-index: -1; transition: box-shadow .2s; }
+  .strip-wrap.stuck::before { box-shadow: 0 1px 0 var(--line), 0 8px 18px rgba(60,40,20,.12); }
   .strip {
-    display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px 10px;
+    display: flex; gap: 8px; overflow-x: auto;
     padding: calc(env(safe-area-inset-top) + 10px) 16px 12px;
     scrollbar-width: none; -webkit-overflow-scrolling: touch;
-    position: sticky; top: 0; z-index: 5; background: var(--bg);
-    /* Paint the background edge to edge, even though the strip sits in the centered column */
-    box-shadow: 0 0 0 100vmax var(--bg); clip-path: inset(0 -100vmax -1px);
   }
-  .strip.stuck { box-shadow: 0 0 0 100vmax var(--bg), 0 1px 0 100vmax var(--line); }
   .strip::-webkit-scrollbar { display: none; }
   .chip {
     flex: 0 0 auto; border: 1px solid var(--line); background: var(--card); border-radius: 14px;
@@ -524,12 +525,12 @@ function renderDays(trip) {
   const L = T[lang];
   const past = trip.days.includes(todayK) ? trip.days.filter(k => k < todayK) : [];
   const hidden = showPast ? [] : past;
-  let html = `<div class="strip" id="strip">` + trip.days.map((k, i) => {
+  let html = `<div class="strip-wrap"><div class="strip" id="strip">` + trip.days.map((k, i) => {
     const dt = keyToDate(k);
     return `<button type="button" class="chip ${k === todayK ? "today" : ""} ${trip.byDay[k] ? "has" : ""}" data-jump="${k}">
       <span class="dow">${lang === "zh" ? DOW_ZH[dt.getDay()] : DOW_EN[dt.getDay()]}</span>
       <span class="num">${dt.getDate()}</span></button>`;
-  }).join("") + `</div>`;
+  }).join("") + `</div></div>`;
 
   if (hidden.length) {
     const range = hidden.length > 1 ? `${fmtDay(hidden[0])} – ${fmtDay(hidden[hidden.length - 1])}` : fmtDay(hidden[0]);
@@ -631,7 +632,7 @@ function setActiveChip(k, instant) {
 }
 function updateActiveDay(instant) {
   const strip = document.getElementById("strip"); if (!strip) return;
-  strip.classList.toggle("stuck", strip.getBoundingClientRect().top <= 0.5 && window.scrollY > 0);
+  strip.parentElement.classList.toggle("stuck", strip.getBoundingClientRect().top <= 0.5 && window.scrollY > 0);
   if (Date.now() < spyPausedUntil) return;
   const cards = [...document.querySelectorAll('section.card[id^="d-"]')]; if (!cards.length) return;
   const line = strip.getBoundingClientRect().bottom + 24;
